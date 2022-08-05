@@ -24,7 +24,11 @@ namespace TripItExport
             if (access_token == null ||
                 access_secret == null ||
                 client_token == null ||
-                client_secret == null) return;
+                client_secret == null)
+            {
+                log.LogError("Configuration settings not set!");
+                return;
+            }
 
             var client = new Client(
                 client_token,
@@ -33,9 +37,20 @@ namespace TripItExport
                 access_secret);
 
             var userUUID = await client.GetUserUUID();
-            if (userUUID == null) return;
+            if (userUUID == null)
+            {
+                log.LogError("User UUID not returned!");
+                return;
+            }
+            log.LogInformation($"User UUID {userUUID} receieved.");
+
             var flights = await client.GetFlights();
-            if (flights is null) return;
+            if (flights is null)
+            {
+                log.LogError("Flights not returned!");
+                return;
+            }
+            log.LogInformation($"{flights.Length} flights received.");
 
             var geojson = new
             {
@@ -71,7 +86,6 @@ namespace TripItExport
             };
 
 
-            log.LogTrace($"{userUUID}.geojson");
             log.LogTrace(JsonSerializer.Serialize(geojson, new JsonSerializerOptions { WriteIndented = true }));
             log.LogInformation($"TripItExport finished at: {DateTime.Now}");
         }
