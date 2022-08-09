@@ -109,12 +109,11 @@ namespace TripItExport
             JsonSerializer.Serialize(outputStream, geojson, new JsonSerializerOptions() { WriteIndented = true });
             outputStream.Position = 0;
             await flightsGeoJson.UploadAsync(outputStream, new BlobHttpHeaders { ContentType = "application/json" });
-            outputStream.Position = 0;
-
+            
+            outputStream = new MemoryStream();
             JsonSerializer.Serialize(outputStream, flights, new JsonSerializerOptions() { WriteIndented = true });
             outputStream.Position = 0;
             await flightsJson.UploadAsync(outputStream, new BlobHttpHeaders { ContentType = "application/json" });
-            outputStream.Position = 0;
 
             log.LogInformation($"TripItExport finished at: {DateTime.Now}");
         }
