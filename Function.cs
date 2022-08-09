@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.IO;
 using System.Configuration;
+using Azure.Storage.Blobs;
+using System.Text;
 
 namespace TripItExport
 {
@@ -15,18 +17,35 @@ namespace TripItExport
         public async Task Run([TimerTrigger("58 3 * * *")]TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"TripItExport started at: {DateTime.Now}");
-            
-            string? access_token = ConfigurationManager.AppSettings["access_token"];
-            string? access_secret = ConfigurationManager.AppSettings["access_secret"];
-            string? client_token = ConfigurationManager.AppSettings["client_token"];
-            string? client_secret = ConfigurationManager.AppSettings["client_secret"];
 
-            if (access_token == null ||
-                access_secret == null ||
-                client_token == null ||
-                client_secret == null)
+            string? access_token = ConfigurationManager.AppSettings["access_token"];
+            if (access_token == null)
             {
-                log.LogError("Configuration settings not set!");
+                log.LogError("access_token settings not set!");
+                return;
+            }
+            string? access_secret = ConfigurationManager.AppSettings["access_secret"];
+            if (access_secret == null)
+            {
+                log.LogError("access_secret settings not set!");
+                return;
+            }
+            string? client_token = ConfigurationManager.AppSettings["client_token"];
+            if (client_token == null)
+            {
+                log.LogError("client_token settings not set!");
+                return;
+            }
+            string? client_secret = ConfigurationManager.AppSettings["client_secret"];
+            if (client_secret == null)
+            {
+                log.LogError("client_secret settings not set!");
+                return;
+            }
+            string? storage_connection_string = ConfigurationManager.AppSettings["storage_connection_string"];
+            if (storage_connection_string == null)
+            {
+                log.LogError("storage_connection_string not set!");
                 return;
             }
 
@@ -85,8 +104,13 @@ namespace TripItExport
                 })
             };
 
+            BlobContainerClient container = new BlobContainerClient(storage_connection_string, "geojson");
+            var blob = container.GetBlobClient($"{userUUID}.geojson");
+            using (MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(geojson, new JsonSerializerOptions { WriteIndented = true }))))
+            {
+                await blob.UploadAsync(ms);
+            }
 
-            log.LogTrace(JsonSerializer.Serialize(geojson, new JsonSerializerOptions { WriteIndented = true }));
             log.LogInformation($"TripItExport finished at: {DateTime.Now}");
         }
     }
