@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TripItExportFunction", "TripItExportFunction.csproj", "{90C54246-8877-42A7-BE70-01597E6D0B9C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TripItExport", "TripItExport.csproj", "{90C54246-8877-42A7-BE70-01597E6D0B9C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
