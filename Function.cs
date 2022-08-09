@@ -18,7 +18,9 @@ namespace TripItExport
         public async Task Run(
             [TimerTrigger("58 3 * * *")]TimerInfo myTimer,
             ILogger log,
-            [Blob("output//flights.geojson", FileAccess.ReadWrite)] BlockBlobClient blobGeoJsonClient)
+            [Blob("tripitexport//flights.json", FileAccess.ReadWrite)] BlockBlobClient flightsJson,
+            [Blob("tripitexport//flights.geojson", FileAccess.ReadWrite)] BlockBlobClient flightsGeoJson
+        )
         {
             log.LogInformation($"TripItExport started at: {DateTime.Now}");
 
@@ -103,10 +105,17 @@ namespace TripItExport
             };
 
             Stream outputStream = new MemoryStream();
+
             JsonSerializer.Serialize(outputStream, geojson, new JsonSerializerOptions() { WriteIndented = true });
             outputStream.Position = 0;
-            await blobGeoJsonClient.UploadAsync(outputStream, new BlobHttpHeaders { ContentType = "application/json" });
-            
+            await flightsGeoJson.UploadAsync(outputStream, new BlobHttpHeaders { ContentType = "application/json" });
+            outputStream.Position = 0;
+
+            JsonSerializer.Serialize(outputStream, flights, new JsonSerializerOptions() { WriteIndented = true });
+            outputStream.Position = 0;
+            await flightsJson.UploadAsync(outputStream, new BlobHttpHeaders { ContentType = "application/json" });
+            outputStream.Position = 0;
+
             log.LogInformation($"TripItExport finished at: {DateTime.Now}");
         }
     }
