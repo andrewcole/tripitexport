@@ -5,47 +5,45 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Linq;
 using System.IO;
-using System.Configuration;
 using Azure.Storage.Blobs;
 using System.Text;
+using Azure.Storage.Blobs.Specialized;
+using Azure.Storage.Blobs.Models;
 
 namespace TripItExport
 {
     public class Function
     {
         [FunctionName("TripItExport")]
-        public async Task Run([TimerTrigger("58 3 * * *")]TimerInfo myTimer, ILogger log)
+        public async Task Run(
+            [TimerTrigger("58 3 * * *")]TimerInfo myTimer,
+            ILogger log,
+            [Blob("output//flights.geojson", FileAccess.ReadWrite)] BlockBlobClient blobGeoJsonClient)
         {
             log.LogInformation($"TripItExport started at: {DateTime.Now}");
 
-            string? access_token = ConfigurationManager.AppSettings["access_token"];
+            string? access_token = Environment.GetEnvironmentVariable("access_token");
             if (access_token == null)
             {
                 log.LogError("access_token settings not set!");
                 return;
             }
-            string? access_secret = ConfigurationManager.AppSettings["access_secret"];
+            string? access_secret = Environment.GetEnvironmentVariable("access_secret");
             if (access_secret == null)
             {
                 log.LogError("access_secret settings not set!");
                 return;
             }
-            string? client_token = ConfigurationManager.AppSettings["client_token"];
+            string? client_token = Environment.GetEnvironmentVariable("client_token");
             if (client_token == null)
             {
                 log.LogError("client_token settings not set!");
                 return;
             }
-            string? client_secret = ConfigurationManager.AppSettings["client_secret"];
+            string? client_secret = Environment.GetEnvironmentVariable("client_secret");
             if (client_secret == null)
             {
                 log.LogError("client_secret settings not set!");
-                return;
-            }
-            string? storage_connection_string = ConfigurationManager.AppSettings["storage_connection_string"];
-            if (storage_connection_string == null)
-            {
-                log.LogError("storage_connection_string not set!");
                 return;
             }
 
@@ -104,13 +102,11 @@ namespace TripItExport
                 })
             };
 
-            BlobContainerClient container = new BlobContainerClient(storage_connection_string, "geojson");
-            var blob = container.GetBlobClient($"{userUUID}.geojson");
-            using (MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(geojson, new JsonSerializerOptions { WriteIndented = true }))))
-            {
-                await blob.UploadAsync(ms);
-            }
-
+            Stream outputStream = new MemoryStream();
+            JsonSerializer.Serialize(outputStream, geojson, new JsonSerializerOptions() { WriteIndented = true });
+            outputStream.Position = 0;
+            await blobGeoJsonClient.UploadAsync(outputStream, new BlobHttpHeaders { ContentType = "application/json" });
+            
             log.LogInformation($"TripItExport finished at: {DateTime.Now}");
         }
     }
